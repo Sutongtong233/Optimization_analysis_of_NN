@@ -120,7 +120,7 @@ if __name__=='__main__':
     # print(loss_ls)
     plt.plot(np.linspace(0, 2, n_inter), loss_ls)
     
-    plt.savefig("./GNN-Perturbation/result/linear_inter_2_opt.png")
+    plt.savefig("./result/linear_inter_2_opt.png")
 
 
     

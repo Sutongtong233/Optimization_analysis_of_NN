@@ -46,17 +46,45 @@ def train(model):
     _, predicted = torch.max(output.data, 1)          
     return acc, output, predicted
 
+def create_random_direction(W):
+    """
+        W: [W1, W2]
 
-def linear_inter_ini_opt(W_0_ini, W_0_opt, model, alpha):
-    model_inter = copy.deepcopy(model)
+        Returns:
+          direction: a random direction with the same dimension as weights or states.
+    """
+
+    # random direction
+   
+    weights = W
+    direction = [torch.randn(w.size()) for w in weights]
+    # normalize_directions_for_weights(direction, weights, norm, ignore)
+    for d, w in zip(direction, weights):
+        d.mul_(w.norm()/(d.norm() + 1e-10))
+   
+    return direction
+
+
+
+def rand_2D_plot(model_opt, alpha, beta):
+    # W_opt: [W0_opt, W1_opt]
+    W_0, W_1, _ = get_model_params(model_opt)
+    # model_inter_0 = copy.deepcopy(model_opt)
+    # model_inter_1 = copy.deepcopy(model_opt)
+    model_inter = copy.deepcopy(model_opt)
+
+    direction = create_random_direction([W_0, W_1])
+    direction_0 = direction[0]
+    direction_1 = direction[1]
     for name, parameters in model_inter.named_parameters():
         if name == 'gcn1.weight': 
-            parameters.data = alpha*W_0_ini + (1-alpha)*W_0_opt
-    # model_inter.gcn1.weight = torch.nn.Parameter(alpha*W_0_ini + (1-alpha)*W_0_opt)
-
+            parameters.data = alpha*direction_0 + (1-alpha)*W_0
+        if name == 'gcn2.weight': 
+            parameters.data = beta*direction_1 + (1-beta)*W_1
     output = F.log_softmax(model_inter(t_features, sparse_mx_to_torch_sparse_tensor(adj)), dim=1)
     loss = F.nll_loss(output, t_labels)
     return torch.round(loss, decimals=4).detach().numpy()
+
 
 
 def get_model_params(model):
@@ -84,6 +112,8 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
+    
+
     random.seed(args.seed) # control N
     torch.manual_seed(args.seed) # control features
 
@@ -92,22 +122,26 @@ if __name__=='__main__':
     print(f"###### total {N} nodes #####")
     print(f"###### features: {t_features[0].max()} #####")
     A = torch.tensor(adj.todense())
-    model = SGC(input_dim=args.D, hidden_dim=args.hidden_dim, output_dim=args.C)
+    # two random initialization of model
+    model_0 = SGC(input_dim=args.D, hidden_dim=args.hidden_dim, output_dim=args.C)
+
+    # two corresponding optimized model
+    acc_before, output_before, predict_before = train(model_0)
+    print(f"accuracy for model: {acc_before}")
+
+
+  
+    # Exp 3: bilinear interpolation 
+    
+    n_inter = 10
+    loss_ls = np.zeros([n_inter, n_inter])
+    for i, alpha in enumerate(np.linspace(-1, 1, n_inter)):
+        for j, beta in enumerate(np.linspace(-1, 1, n_inter)):
+            loss_ls[i][j] = rand_2D_plot(model_0, alpha, beta)
+    # print(loss_ls)
+    
+    plt.imsave("./result/Exp4_2D.png", loss_ls)
+    
+
 
     
-    W_0_ini, W_1_ini, W_ini = get_model_params(model)
-    acc_before, output_before, predict_before = train(model)
-    W_0_opt, W_1_opt, W_opt = get_model_params(model)
-    print(acc_before)
-
-
-    # Exp 1: optimization path is easy
-    loss_ls = []
-    n_inter = 50
-    for alpha in np.linspace(0, 2, n_inter):
-        loss_ls.append(linear_inter_ini_opt(W_0_ini, W_0_opt, model, alpha))
-    # print(loss_ls)
-    plt.plot(np.linspace(0, 2, n_inter), loss_ls)
-    plt.savefig("./result/linear_inter_ini_opt.png")
-
-

@@ -139,7 +139,7 @@ if __name__=='__main__':
             loss_ls[i][j] = bilinear_inter(model_0_ini, model_1_ini, model_0, model_1, alpha, beta)
     # print(loss_ls)
     
-    plt.imsave("./GNN-Perturbation/result/Exp3_bilinear.png", loss_ls)
+    plt.imsave("./result/Exp3_bilinear.png", loss_ls)
     
 
 
