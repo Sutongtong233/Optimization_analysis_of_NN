@@ -15,7 +15,9 @@ In our experiments, N~=500, D=128, C=2. We use two layer GCN model, with hidden 
 See Exp_1 and Exp_2.
 ### Exp_1: 
 We do linear interpolation between random initilaized $\theta^0$ and corresponding optimized $\theta^*$:
+
 $$\alpha\theta^0+(1-\alpha)\theta^*$$
+
 where $\alpha\in[0,2]$
 ![image](./result/linear_inter_ini_opt.png)
 We see that the loss well-behaved between $\theta^0$ and $\theta^*$, the curve is convex.
